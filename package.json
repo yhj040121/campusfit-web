@@ -1,0 +1,20 @@
+{
+  "name": "campusfit-web",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config ./vite.config.js --host 127.0.0.1 --port 5174 --strictPort",
+    "build": "vite build --config ./vite.config.js",
+    "preview": "vite preview --config ./vite.config.js --host 127.0.0.1 --port 4174 --strictPort"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "vue": "^3.4.27",
+    "vue-router": "^4.3.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.5",
+    "vite": "^5.2.13"
+  }
+}
