@@ -21,16 +21,32 @@
         </nav>
 
         <div class="topbar__actions">
-          <label class="search-field" for="globalSearchInput">
-            <span class="search-field__icon">搜</span>
-            <input
-              id="globalSearchInput"
-              v-model="searchText"
-              type="search"
-              placeholder="搜索内容或活动"
-              @keydown.enter.prevent="submitSearch"
-            >
-          </label>
+          <div class="search-cluster">
+            <label class="search-field" for="globalSearchInput">
+              <span class="search-field__icon">搜</span>
+              <input
+                id="globalSearchInput"
+                v-model="searchText"
+                type="search"
+                placeholder="搜索内容或活动"
+                @keydown.enter.prevent="submitSearch"
+              >
+            </label>
+            <button class="primary-button primary-button--compact search-submit" type="button" @click="submitSearch">
+              搜索
+            </button>
+          </div>
+
+          <button
+            v-if="store.isAuthed.value"
+            class="ghost-button ghost-button--compact topbar-message-button"
+            type="button"
+            @click="router.push({ name: 'messages' })"
+          >
+            消息
+            <span v-if="store.state.unreadCount > 0" class="topbar-message-badge">{{ messageBadgeText }}</span>
+          </button>
+
           <button
             class="ghost-button ghost-button--compact"
             type="button"
@@ -39,6 +55,7 @@
           >
             {{ store.state.refreshing ? "刷新中..." : "刷新" }}
           </button>
+
           <button
             :class="[store.isAuthed.value ? 'ghost-button ghost-button--compact' : 'primary-button primary-button--compact']"
             type="button"
@@ -66,10 +83,11 @@
               <strong>{{ store.selectableActivities.value.length }}</strong>
               <span>可选活动</span>
             </div>
-            <div class="status-metric">
+            <button class="status-metric status-metric--button" type="button" @click="openMessages">
+              <span v-if="store.state.unreadCount > 0" class="status-metric__badge">{{ messageBadgeText }}</span>
               <strong>{{ store.state.unreadCount }}</strong>
-              <span>消息</span>
-            </div>
+              <span>未读消息</span>
+            </button>
           </div>
         </section>
 
@@ -87,7 +105,7 @@
             </div>
 
             <div class="quick-grid">
-              <button class="quick-tile" type="button" @click="router.push({ name: 'publish' })">
+              <button class="quick-tile" type="button" @click="goProfileTab('drafts')">
                 <span class="quick-tile__label">草稿</span>
                 <span class="quick-tile__value">{{ store.state.drafts.length }}</span>
               </button>
@@ -95,18 +113,19 @@
                 <span class="quick-tile__label">活动</span>
                 <span class="quick-tile__value">{{ store.state.myActivities.length }}</span>
               </button>
-              <button class="quick-tile" type="button" @click="router.push({ name: 'profile' })">
+              <button class="quick-tile" type="button" @click="goProfileTab('favorites')">
                 <span class="quick-tile__label">收藏</span>
                 <span class="quick-tile__value">{{ store.state.favoritePosts.length }}</span>
               </button>
-              <button class="quick-tile" type="button" @click="router.push({ name: 'profile' })">
+              <button class="quick-tile" type="button" @click="goProfileTab('posts')">
                 <span class="quick-tile__label">发布</span>
                 <span class="quick-tile__value">{{ store.state.myPosts.length }}</span>
               </button>
             </div>
 
-            <div class="quick-actions">
+            <div class="quick-actions quick-actions--grid">
               <button class="quick-action" type="button" @click="router.push({ name: 'publish' })">发布内容</button>
+              <button class="quick-action" type="button" @click="router.push({ name: 'messages' })">消息列表</button>
               <button class="quick-action" type="button" @click="router.push({ name: 'profile' })">我的</button>
               <button class="quick-action" type="button" @click="handleLogout">退出登录</button>
             </div>
@@ -189,6 +208,13 @@ const authText = computed(() => {
   return firstText(store.state.profile?.name, store.state.user?.nickname, "我的");
 });
 
+const messageBadgeText = computed(() => {
+  if (store.state.unreadCount > 99) {
+    return "99+";
+  }
+  return String(store.state.unreadCount || 0);
+});
+
 watch(
   () => route.query.q,
   (value) => {
@@ -205,6 +231,18 @@ function submitSearch() {
     name: "home",
     query: searchText.value.trim() ? { q: searchText.value.trim() } : {}
   });
+}
+
+function goProfileTab(tab) {
+  router.push({ name: "profile", query: { tab } });
+}
+
+function openMessages() {
+  if (!store.isAuthed.value) {
+    store.openLoginDialog();
+    return;
+  }
+  router.push({ name: "messages" });
 }
 
 async function refreshAll() {
@@ -248,3 +286,81 @@ function handleLogout() {
   router.push({ name: "home" });
 }
 </script>
+
+<style scoped>
+.search-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-submit {
+  flex: 0 0 auto;
+}
+
+.topbar-message-button {
+  position: relative;
+}
+
+.topbar-message-badge,
+.status-metric__badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ef5a5a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.topbar-message-badge {
+  margin-left: 8px;
+}
+
+.status-metric--button {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.status-metric__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.status-metric--button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(20, 103, 245, 0.16);
+}
+
+.quick-actions--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+  .search-cluster {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .search-cluster {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    width: 100%;
+  }
+
+  .quick-actions--grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

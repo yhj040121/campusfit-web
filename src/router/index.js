@@ -1,10 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 import WebLayout from "../layouts/WebLayout.vue";
 import HomeView from "../views/HomeView.vue";
+import AnnouncementsView from "../views/AnnouncementsView.vue";
 import ActivitiesView from "../views/ActivitiesView.vue";
 import ActivityDetailView from "../views/ActivityDetailView.vue";
+import MessagesView from "../views/MessagesView.vue";
 import PostDetailView from "../views/PostDetailView.vue";
 import PublishView from "../views/PublishView.vue";
+import FollowsView from "../views/FollowsView.vue";
 import ProfileView from "../views/ProfileView.vue";
 
 const routes = [
@@ -19,6 +22,12 @@ const routes = [
         meta: { title: "首页" }
       },
       {
+        path: "announcements",
+        name: "announcements",
+        component: AnnouncementsView,
+        meta: { title: "公告中心" }
+      },
+      {
         path: "activities",
         name: "activities",
         component: ActivitiesView,
@@ -29,6 +38,18 @@ const routes = [
         name: "activity-detail",
         component: ActivityDetailView,
         meta: { title: "活动详情" }
+      },
+      {
+        path: "messages",
+        name: "messages",
+        component: MessagesView,
+        meta: { title: "消息列表" }
+      },
+      {
+        path: "follows",
+        name: "follows",
+        component: FollowsView,
+        meta: { title: "关注与粉丝" }
       },
       {
         path: "posts/:id",

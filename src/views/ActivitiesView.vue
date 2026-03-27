@@ -1,5 +1,7 @@
 <template>
   <div class="page-shell">
+    <button class="ghost-button detail-shell__back" type="button" @click="goHome">返回首页</button>
+
     <section class="section-panel">
       <div class="section-head">
         <div class="section-head__main">
@@ -22,26 +24,22 @@
 
       <div class="page-head-metrics">
         <span class="page-head-metric">全部 {{ store.state.activities.length }}</span>
-        <span class="page-head-metric">可发布 {{ store.selectableActivities.value.length }}</span>
+        <span class="page-head-metric">发布可选 {{ store.selectableActivities.value.length }}</span>
         <span class="page-head-metric">已参与 {{ store.state.myActivities.length }}</span>
       </div>
 
-      <template v-if="headlineActivity">
-        <ActivityCard featured :activity="headlineActivity" @open="openActivity" />
-
-        <div v-if="restActivities.length" class="activity-grid">
-          <ActivityCard
-            v-for="activity in restActivities"
-            :key="activity.id"
-            :activity="activity"
-            @open="openActivity"
-          />
-        </div>
-      </template>
+      <div v-if="filteredActivities.length" class="activity-grid activities-grid">
+        <ActivityCard
+          v-for="activity in filteredActivities"
+          :key="activity.id"
+          :activity="activity"
+          @open="openActivity"
+        />
+      </div>
 
       <div v-else class="empty-state">
         <div class="empty-state__title">还没有活动</div>
-        <p class="empty-state__copy">请稍后刷新。</p>
+        <p class="empty-state__copy">请稍后刷新，或切换筛选条件再看看。</p>
       </div>
     </section>
   </div>
@@ -78,10 +76,24 @@ const filteredActivities = computed(() => {
   return store.state.activities;
 });
 
-const headlineActivity = computed(() => filteredActivities.value[0] || null);
-const restActivities = computed(() => filteredActivities.value.slice(1));
-
 function openActivity(id) {
   router.push({ name: "activity-detail", params: { id } });
 }
+
+function goHome() {
+  router.push({ name: "home" });
+}
 </script>
+
+<style scoped>
+.activities-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: stretch;
+}
+
+@media (max-width: 720px) {
+  .activities-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

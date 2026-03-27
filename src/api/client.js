@@ -1,4 +1,4 @@
-import http from "./http";
+﻿import http from "./http";
 
 export function sendAuthCode(phone, scene = "login") {
   return http.post("/auth/send-code", { phone, scene });
@@ -18,6 +18,10 @@ export function getCurrentUser() {
 
 export function getLatestAnnouncement() {
   return http.get("/announcements/latest");
+}
+
+export function listAnnouncements() {
+  return http.get("/announcements");
 }
 
 export function listFeaturedActivities() {
@@ -54,12 +58,28 @@ export function getPostDetail(postId) {
   return http.get(`/posts/${postId}`);
 }
 
+export function getPostEdit(postId) {
+  return http.get(`/posts/${postId}/edit`);
+}
+
+export function updatePost(postId, payload) {
+  return http.put(`/posts/${postId}`, payload);
+}
+
+export function deletePost(postId) {
+  return http.post(`/posts/${postId}/delete`);
+}
+
 export function listComments(postId) {
   return http.get(`/posts/${postId}/comments`);
 }
 
 export function createComment(postId, payload) {
   return http.post(`/posts/${postId}/comments`, payload);
+}
+
+export function toggleCommentLike(postId, commentId) {
+  return http.post(`/posts/${postId}/comments/${commentId}/like`);
 }
 
 export function toggleLike(postId) {
@@ -114,6 +134,10 @@ export function listMyPosts() {
   return http.get("/posts/mine");
 }
 
+export function listLikedPosts() {
+  return http.get("/posts/liked");
+}
+
 export function listFavoritePosts() {
   return http.get("/posts/favorites");
 }
@@ -126,20 +150,42 @@ export function listMyActivities() {
   return http.get("/activities/mine");
 }
 
+export function listMessages() {
+  return http.get("/messages");
+}
+
 export function getUnreadMessageCount() {
   return http.get("/messages/unread-count");
+}
+
+export function markMessageRead(messageId) {
+  return http.post(`/messages/${messageId}/read`);
+}
+
+export function markAllMessagesRead() {
+  return http.post("/messages/read-all");
+}
+
+export function deleteMessage(messageId) {
+  return http.post(`/messages/${messageId}/delete`);
+}
+
+export function deleteReadMessages() {
+  return http.post("/messages/delete-read");
 }
 
 export function getTagOptions() {
   return http.get("/tags/options");
 }
 
-export async function uploadPostImage(file) {
+export async function uploadPostImage(file, options = {}) {
   const formData = new FormData();
   formData.append("file", file);
   return http.post("/uploads/images", formData, {
+    timeout: options.timeout ?? 30000,
     headers: {
       "Content-Type": "multipart/form-data"
     }
   });
 }
+

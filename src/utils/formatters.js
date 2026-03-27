@@ -47,7 +47,7 @@ export function formatMoney(value) {
   return `¥${amount.toFixed(2)}`;
 }
 
-export function getInitial(value, fallback = "青") {
+export function getInitial(value, fallback = "青搭") {
   const text = safeText(value, fallback);
   return text.slice(0, 2).toUpperCase();
 }

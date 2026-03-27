@@ -41,7 +41,7 @@ http.interceptors.response.use(
     }
 
     if (error?.response?.status === 403) {
-      return Promise.reject(new Error("请求被拒绝，请检查 Nginx /api 反向代理或后端访问权限"));
+      return Promise.reject(new Error("请求被拒绝，请检查 /api 代理配置或后端访问权限"));
     }
 
     const message = typeof error?.response?.data === "string"

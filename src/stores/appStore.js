@@ -1,4 +1,4 @@
-import { computed, reactive } from "vue";
+﻿import { computed, reactive } from "vue";
 import * as api from "../api/client";
 import {
   clampNumber,
@@ -31,10 +31,13 @@ const state = reactive({
   profile: null,
   incentiveCenter: null,
   myPosts: [],
+  likedPosts: [],
   favoritePosts: [],
   drafts: [],
   follows: [],
+  followers: [],
   myActivities: [],
+  messages: [],
   unreadCount: 0,
   loginDialogOpen: false,
   loginForm: {
@@ -101,6 +104,12 @@ function normalizePost(item, index = 0) {
     saves: clampNumber(item?.saves || item?.favoriteCount || item?.collectCount),
     shares: clampNumber(item?.shares || item?.shareCount),
     publishTime: safeText(item?.publishTime, "刚刚"),
+    publishStatus: safeText(item?.publishStatus, "PUBLISHED"),
+    publishStatusText: safeText(item?.publishStatusText, "已发布"),
+    publishStatusDesc: safeText(item?.publishStatusDesc),
+    canViewDetail: item?.canViewDetail !== false,
+    canShelfDown: !!item?.canShelfDown,
+    canRestore: !!item?.canRestore,
     price: safeText(item?.price),
     product: safeText(item?.product),
     productLink: firstText(item?.productLink),
@@ -169,10 +178,13 @@ function resetPrivateState() {
   state.profile = null;
   state.incentiveCenter = null;
   state.myPosts = [];
+  state.likedPosts = [];
   state.favoritePosts = [];
   state.drafts = [];
   state.follows = [];
+  state.followers = [];
   state.myActivities = [];
+  state.messages = [];
   state.unreadCount = 0;
 }
 
@@ -221,9 +233,11 @@ async function loadPrivateData() {
     api.getMyProfile(),
     api.getMyIncentiveCenter(),
     api.listMyPosts(),
+    api.listLikedPosts(),
     api.listFavoritePosts(),
     api.listDrafts(),
     api.listFollows("following"),
+    api.listFollows("fans"),
     api.listMyActivities(),
     api.getUnreadMessageCount()
   ]);
@@ -239,11 +253,13 @@ async function loadPrivateData() {
   state.profile = results[1].status === "fulfilled" ? normalizeProfile(results[1].value) : null;
   state.incentiveCenter = results[2].status === "fulfilled" ? normalizeIncentive(results[2].value) : null;
   state.myPosts = results[3].status === "fulfilled" ? results[3].value.map(normalizePost) : [];
-  state.favoritePosts = results[4].status === "fulfilled" ? results[4].value.map(normalizePost) : [];
-  state.drafts = results[5].status === "fulfilled" ? results[5].value.map(normalizeDraft) : [];
-  state.follows = results[6].status === "fulfilled" ? results[6].value : [];
-  state.myActivities = results[7].status === "fulfilled" ? results[7].value.map(normalizeActivity) : [];
-  state.unreadCount = results[8].status === "fulfilled" ? clampNumber(results[8].value) : 0;
+  state.likedPosts = results[4].status === "fulfilled" ? results[4].value.map(normalizePost) : [];
+  state.favoritePosts = results[5].status === "fulfilled" ? results[5].value.map(normalizePost) : [];
+  state.drafts = results[6].status === "fulfilled" ? results[6].value.map(normalizeDraft) : [];
+  state.follows = results[7].status === "fulfilled" ? results[7].value : [];
+  state.followers = results[8].status === "fulfilled" ? results[8].value : [];
+  state.myActivities = results[9].status === "fulfilled" ? results[9].value.map(normalizeActivity) : [];
+  state.unreadCount = results[10].status === "fulfilled" ? clampNumber(results[10].value) : 0;
   state.privateLoading = false;
 }
 
@@ -457,3 +473,4 @@ export function useAppStore() {
     normalizeDraft
   };
 }
+
