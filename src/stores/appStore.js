@@ -27,7 +27,7 @@ const state = reactive({
     styleTags: ["学院风", "宽松休闲", "甜酷", "极简", "韩系", "清新"],
     budgetTags: ["50-100", "100-150", "150-200", "200+"]
   },
-  user: getUser(),
+  user: null,
   profile: null,
   incentiveCenter: null,
   myPosts: [],
@@ -223,7 +223,8 @@ async function loadPublicData() {
 async function loadPrivateData() {
   if (!isLoggedIn()) {
     resetPrivateState();
-    state.user = getUser();
+    state.user = null;
+    state.privateLoading = false;
     return;
   }
 
@@ -249,6 +250,8 @@ async function loadPrivateData() {
       nickname: results[0].value.nickname,
       avatarUrl: results[0].value.avatarUrl || ""
     };
+  } else {
+    state.user = null;
   }
   state.profile = results[1].status === "fulfilled" ? normalizeProfile(results[1].value) : null;
   state.incentiveCenter = results[2].status === "fulfilled" ? normalizeIncentive(results[2].value) : null;
@@ -430,6 +433,7 @@ function logout() {
 }
 
 const isAuthed = computed(() => isLoggedIn());
+const hasPrivateSession = computed(() => isLoggedIn() && (state.privateLoading || !!state.profile));
 const followedAuthorIds = computed(() => {
   return Array.from(
     new Set(
@@ -454,6 +458,7 @@ export function useAppStore() {
   return {
     state,
     isAuthed,
+    hasPrivateSession,
     followedAuthorIds,
     selectableActivities,
     bootstrap,

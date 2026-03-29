@@ -9,6 +9,7 @@ import PostDetailView from "../views/PostDetailView.vue";
 import PublishView from "../views/PublishView.vue";
 import FollowsView from "../views/FollowsView.vue";
 import ProfileView from "../views/ProfileView.vue";
+import ProfileEditView from "../views/ProfileEditView.vue";
 
 const routes = [
   {
@@ -68,6 +69,12 @@ const routes = [
         name: "profile",
         component: ProfileView,
         meta: { title: "我的" }
+      },
+      {
+        path: "profile/edit",
+        name: "profile-edit",
+        component: ProfileEditView,
+        meta: { title: "修改资料" }
       }
     ]
   }

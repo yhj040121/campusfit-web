@@ -38,7 +38,7 @@
           </div>
 
           <button
-            v-if="store.isAuthed.value"
+            v-if="canUsePrivateUi"
             class="ghost-button ghost-button--compact topbar-message-button"
             type="button"
             @click="router.push({ name: 'messages' })"
@@ -57,7 +57,7 @@
           </button>
 
           <button
-            :class="[store.isAuthed.value ? 'ghost-button ghost-button--compact' : 'primary-button primary-button--compact']"
+            :class="[canUsePrivateUi ? 'ghost-button ghost-button--compact' : 'primary-button primary-button--compact']"
             type="button"
             @click="handleAuthClick"
           >
@@ -92,7 +92,7 @@
         </section>
 
         <section class="panel">
-          <template v-if="store.isAuthed.value && store.state.profile">
+          <template v-if="canUsePrivateUi && store.state.profile">
             <div class="quick-user">
               <div class="quick-user__avatar">
                 <img v-if="store.state.profile.avatarUrl" :src="store.state.profile.avatarUrl" :alt="store.state.profile.name">
@@ -126,7 +126,7 @@
             <div class="quick-actions quick-actions--grid">
               <button class="quick-action" type="button" @click="router.push({ name: 'publish' })">发布内容</button>
               <button class="quick-action" type="button" @click="router.push({ name: 'messages' })">消息列表</button>
-              <button class="quick-action" type="button" @click="router.push({ name: 'profile' })">我的</button>
+              <button class="quick-action" type="button" @click="router.push({ name: 'profile-edit' })">修改资料</button>
               <button class="quick-action" type="button" @click="handleLogout">退出登录</button>
             </div>
           </template>
@@ -201,8 +201,10 @@ const navItems = [
   { name: "profile", label: "我的" }
 ];
 
+const canUsePrivateUi = computed(() => store.hasPrivateSession.value);
+
 const authText = computed(() => {
-  if (!store.isAuthed.value) {
+  if (!canUsePrivateUi.value) {
     return "登录";
   }
   return firstText(store.state.profile?.name, store.state.user?.nickname, "我的");
@@ -238,7 +240,7 @@ function goProfileTab(tab) {
 }
 
 function openMessages() {
-  if (!store.isAuthed.value) {
+  if (!canUsePrivateUi.value) {
     store.openLoginDialog();
     return;
   }
@@ -250,7 +252,7 @@ async function refreshAll() {
 }
 
 function handleAuthClick() {
-  if (store.isAuthed.value) {
+  if (canUsePrivateUi.value) {
     router.push({ name: "profile" });
     return;
   }
@@ -288,6 +290,10 @@ function handleLogout() {
 </script>
 
 <style scoped>
+.brand__mark {
+  font-size: 18px;
+}
+
 .search-cluster {
   display: flex;
   align-items: center;

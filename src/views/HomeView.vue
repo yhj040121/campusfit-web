@@ -40,7 +40,7 @@
       <div class="section-head">
         <div class="section-head__main">
           <div class="section-title__eyebrow">{{ searchKeyword ? "Result" : "Feed" }}</div>
-          <h2 class="section-title">{{ searchKeyword ? "搜索结果" : "内容流" }}</h2>
+          <h2 class="section-title">{{ searchKeyword ? "搜索结果" : "每日灵感" }}</h2>
         </div>
 
         <div class="feed-head__controls">

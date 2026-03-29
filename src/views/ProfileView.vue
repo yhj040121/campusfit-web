@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="page-shell">
-    <section v-if="!store.isAuthed.value" class="login-panel">
+    <section v-if="!store.hasPrivateSession.value" class="login-panel">
       <div class="login-panel__title">登录后查看我的内容</div>
       <div class="button-row">
         <button class="primary-button" type="button" @click="store.openLoginDialog()">立即登录</button>
@@ -27,6 +27,9 @@
                   <span>{{ store.state.profile?.school || "完善学校信息" }}</span>
                   <span v-if="store.state.profile?.locationName">{{ store.state.profile.locationName }}</span>
                   <span v-if="store.state.profile?.gender">{{ store.state.profile.gender }}</span>
+                </div>
+                <div class="button-row profile-hero__actions">
+                  <button class="outline-button" type="button" @click="router.push({ name: 'profile-edit' })">修改资料</button>
                 </div>
               </div>
             </div>
@@ -255,7 +258,7 @@ const emptyState = computed(() => {
   if (activeTab.value === "favorites") {
     return {
       title: "你还没有收藏内容",
-      copy: "先去内容流逛逛，遇到想反复参考的内容再收藏。",
+      copy: "先去每日灵感逛逛，遇到想反复参考的内容再收藏。",
       actionLabel: "去首页看看",
       actionName: "home"
     };
@@ -514,6 +517,8 @@ function syncTabFromRoute(value) {
   font-weight: 800;
   line-height: 1;
 }
+
+.profile-hero__actions {
+  margin-top: 4px;
+}
 </style>
-
-

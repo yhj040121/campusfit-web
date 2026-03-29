@@ -126,6 +126,14 @@ export function getMyProfile() {
   return http.get("/profile/me");
 }
 
+export function getMyProfileForEdit() {
+  return http.get("/profile/me/edit");
+}
+
+export function updateMyProfile(payload) {
+  return http.put("/profile/me", payload);
+}
+
 export function getMyIncentiveCenter() {
   return http.get("/profile/incentives");
 }
@@ -178,14 +186,26 @@ export function getTagOptions() {
   return http.get("/tags/options");
 }
 
-export async function uploadPostImage(file, options = {}) {
+async function uploadAsset(url, file, options = {}) {
   const formData = new FormData();
   formData.append("file", file);
-  return http.post("/uploads/images", formData, {
+  return http.post(url, formData, {
     timeout: options.timeout ?? 30000,
     headers: {
       "Content-Type": "multipart/form-data"
     }
   });
+}
+
+export async function uploadPostImage(file, options = {}) {
+  return uploadAsset("/uploads/images", file, options);
+}
+
+export async function uploadAvatar(file, options = {}) {
+  return uploadAsset("/uploads/avatar", file, options);
+}
+
+export async function uploadProfileCover(file, options = {}) {
+  return uploadAsset("/uploads/profile-cover", file, options);
 }
 
