@@ -41,7 +41,7 @@
             v-if="canUsePrivateUi"
             class="ghost-button ghost-button--compact topbar-message-button"
             type="button"
-            @click="router.push({ name: 'messages' })"
+            @click="openMessages"
           >
             消息
             <span v-if="store.state.unreadCount > 0" class="topbar-message-badge">{{ messageBadgeText }}</span>
@@ -121,11 +121,16 @@
                 <span class="quick-tile__label">发布</span>
                 <span class="quick-tile__value">{{ store.state.myPosts.length }}</span>
               </button>
+              <button class="quick-tile" type="button" @click="router.push({ name: 'cooperations' })">
+                <span class="quick-tile__label">合作</span>
+                <span class="quick-tile__value">{{ store.state.profile?.cooperation || 0 }}</span>
+              </button>
             </div>
 
             <div class="quick-actions quick-actions--grid">
               <button class="quick-action" type="button" @click="router.push({ name: 'publish' })">发布内容</button>
               <button class="quick-action" type="button" @click="router.push({ name: 'messages' })">消息列表</button>
+              <button class="quick-action" type="button" @click="router.push({ name: 'cooperations' })">我的合作</button>
               <button class="quick-action" type="button" @click="router.push({ name: 'profile-edit' })">修改资料</button>
               <button class="quick-action" type="button" @click="handleLogout">退出登录</button>
             </div>
@@ -179,12 +184,26 @@
       @send-code="handleSendCode"
       @submit="handleLogin"
     />
+
+    <ActionDialog
+      :open="store.state.actionDialog.open"
+      :mode="store.state.actionDialog.mode"
+      :tone="store.state.actionDialog.tone"
+      :eyebrow="store.state.actionDialog.eyebrow"
+      :title="store.state.actionDialog.title"
+      :message="store.state.actionDialog.message"
+      :confirm-text="store.state.actionDialog.confirmText"
+      :cancel-text="store.state.actionDialog.cancelText"
+      @cancel="store.closeActionDialog()"
+      @confirm="store.submitActionDialog()"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
+import ActionDialog from "../components/ActionDialog.vue";
 import LoginDialog from "../components/LoginDialog.vue";
 import { useAppStore } from "../stores/appStore";
 import { firstText, getInitial } from "../utils/formatters";

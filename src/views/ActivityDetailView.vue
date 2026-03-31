@@ -44,7 +44,7 @@
 
             <div class="detail-kpis">
               <div class="detail-kpi">
-                <strong>热度</strong>
+                <strong>热度（点赞+评论）</strong>
                 <span>{{ activity.heat }}</span>
               </div>
               <div class="detail-kpi">

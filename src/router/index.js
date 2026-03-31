@@ -5,9 +5,11 @@ import AnnouncementsView from "../views/AnnouncementsView.vue";
 import ActivitiesView from "../views/ActivitiesView.vue";
 import ActivityDetailView from "../views/ActivityDetailView.vue";
 import MessagesView from "../views/MessagesView.vue";
+import CooperationsView from "../views/CooperationsView.vue";
 import PostDetailView from "../views/PostDetailView.vue";
 import PublishView from "../views/PublishView.vue";
 import FollowsView from "../views/FollowsView.vue";
+import IncentivesView from "../views/IncentivesView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import ProfileEditView from "../views/ProfileEditView.vue";
 
@@ -47,6 +49,12 @@ const routes = [
         meta: { title: "消息列表" }
       },
       {
+        path: "cooperations",
+        name: "cooperations",
+        component: CooperationsView,
+        meta: { title: "我的合作" }
+      },
+      {
         path: "follows",
         name: "follows",
         component: FollowsView,
@@ -69,6 +77,12 @@ const routes = [
         name: "profile",
         component: ProfileView,
         meta: { title: "我的" }
+      },
+      {
+        path: "incentives",
+        name: "incentives",
+        component: IncentivesView,
+        meta: { title: "激励中心" }
       },
       {
         path: "profile/edit",

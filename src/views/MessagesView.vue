@@ -143,11 +143,16 @@ async function markAllReadAction() {
 }
 
 async function clearReadAction() {
-  if (typeof window !== "undefined") {
-    const confirmed = window.confirm("确定清理所有已读消息吗？清理后无法恢复。");
-    if (!confirmed) {
-      return;
-    }
+  const confirmed = await store.confirmDialog({
+    eyebrow: "Messages",
+    title: "清理已读消息",
+    message: "确定清理所有已读消息吗？清理后无法恢复。",
+    confirmText: "确认清理",
+    cancelText: "暂不清理",
+    tone: "danger"
+  });
+  if (!confirmed) {
+    return;
   }
   await api.deleteReadMessages();
   await loadMessages();

@@ -247,6 +247,55 @@
             </div>
           </section>
 
+          <section class="section-panel publish-panel">
+            <div class="publish-panel__head">
+              <div class="section-title__eyebrow">Cooperation</div>
+              <div class="publish-panel__title-row">
+                <h2 class="section-title">发布绑定合作单</h2>
+                <span class="publish-panel__meta">{{ selectableCooperations.length }} 个可绑定</span>
+              </div>
+              <p class="publish-panel__copy">只有已确认且仍可执行的合作单会出现在这里。待确认合作请先去“我的合作”里确认，再回来绑定发布内容。</p>
+            </div>
+
+            <div v-if="selectableCooperations.length" class="publish-activity-grid">
+              <button
+                v-for="cooperation in selectableCooperations"
+                :key="cooperation.id"
+                :class="['publish-activity-option', selectedCooperation?.id === cooperation.id ? 'publish-activity-option--active' : '']"
+                type="button"
+                @click="selectCooperation(cooperation.id)"
+              >
+                <div class="publish-activity-option__top">
+                  <div class="publish-activity-option__title-line">
+                    <span :class="['publish-activity-option__tone', activityToneClass(cooperation)]"></span>
+                    <strong>{{ cooperation.title }}</strong>
+                  </div>
+                  <span :class="['status-pill', cooperation.rewardIssued ? 'status-pill--finished' : cooperation.rewardReady ? 'status-pill--recruiting' : 'status-pill--active']">
+                    {{ cooperation.status }}
+                  </span>
+                </div>
+
+                <p class="publish-activity-option__copy">{{ cooperation.desc }}</p>
+
+                <div class="tag-row">
+                  <span class="tag-pill">{{ cooperation.merchantName }}</span>
+                  <span class="tag-pill">已过 {{ cooperation.approvedPostCount }}/{{ cooperation.targetPostCount }}</span>
+                </div>
+              </button>
+            </div>
+
+            <div v-else class="empty-state">
+              <div class="empty-state__title">{{ cooperationLoading ? "正在加载合作单..." : "当前没有可绑定合作单" }}</div>
+              <p class="empty-state__copy">管理员创建合作单后，先在“我的合作”里确认，再回到发布页绑定内容。</p>
+              <button class="ghost-button" type="button" @click="router.push({ name: 'cooperations' })">查看我的合作</button>
+            </div>
+
+            <div v-if="selectedCooperation" class="helper-inline publish-helper-inline">
+              已选择合作单：{{ selectedCooperation.title }}
+              <button class="small-link" type="button" @click="selectCooperation('')">取消绑定</button>
+            </div>
+          </section>
+
           <section class="composer-summary publish-submit-card">
             <div class="publish-submit-card__copy">
               <div class="composer-summary__title">{{ publishTitle }}</div>
@@ -284,6 +333,8 @@ const store = useAppStore();
 const saving = ref(false);
 const submitting = ref(false);
 const loadingEditor = ref(false);
+const cooperationLoading = ref(false);
+const cooperationChoices = ref([]);
 
 const form = reactive({
   title: "",
@@ -295,6 +346,7 @@ const form = reactive({
   budget: "",
   images: [],
   activityId: "",
+  cooperationId: "",
   draftId: "",
   postId: ""
 });
@@ -307,6 +359,8 @@ const canUploadMore = computed(() => form.images.length < MAX_IMAGE_COUNT);
 const placeholderCount = computed(() => Math.max(0, 4 - form.images.length - (canUploadMore.value ? 1 : 0)));
 const selectedActivity = computed(() => store.selectableActivities.value.find((item) => String(item.id) === String(form.activityId)) || null);
 const activityChoices = computed(() => store.selectableActivities.value);
+const selectableCooperations = computed(() => cooperationChoices.value.filter((item) => item.canPublish));
+const selectedCooperation = computed(() => cooperationChoices.value.find((item) => String(item.id) === String(form.cooperationId)) || null);
 const isEditingPost = computed(() => !!form.postId && !form.draftId);
 const isReady = computed(() => {
   return !!(form.title.trim() && form.desc.trim() && successImages.value.length && failedCount.value === 0 && !uploadingCount.value);
@@ -392,6 +446,19 @@ watch(
 );
 
 watch(
+  () => store.isAuthed.value,
+  (authed) => {
+    if (!authed) {
+      cooperationChoices.value = [];
+      form.cooperationId = "";
+      return;
+    }
+    loadCooperations();
+  },
+  { immediate: true }
+);
+
+watch(
   () => route.query.activityId,
   (value) => {
     const nextId = String(value || "");
@@ -402,6 +469,18 @@ watch(
     if (exists) {
       form.activityId = nextId;
     }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => route.query.cooperationId,
+  (value) => {
+    const nextId = String(value || "");
+    if (!nextId) {
+      return;
+    }
+    form.cooperationId = nextId;
   },
   { immediate: true }
 );
@@ -434,8 +513,52 @@ onBeforeUnmount(() => {
   form.images.forEach(revokePreview);
 });
 
+function normalizeCooperation(item, index = 0) {
+  const targetPostCount = Math.max(Number(item?.targetPostCount || 1), 1);
+  const approvedPostCount = Math.max(Number(item?.approvedPostCount || 0), 0);
+  const tones = ["mint", "blue", "green", "amber", "rose", "slate"];
+  return {
+    id: safeText(item?.id),
+    title: safeText(item?.title, "未命名合作单"),
+    merchantName: safeText(item?.merchantName, "合作品牌"),
+    desc: safeText(item?.desc, "确认合作后即可在发布时绑定内容。"),
+    status: safeText(item?.status, "待确认"),
+    rewardAmount: item?.rewardAmount,
+    targetPostCount,
+    approvedPostCount,
+    submittedPostCount: Math.max(Number(item?.submittedPostCount || 0), 0),
+    canAccept: !!item?.canAccept,
+    canPublish: !!item?.canPublish,
+    rewardReady: !!item?.rewardReady,
+    rewardIssued: !!item?.rewardIssued,
+    progressText: safeText(item?.progressText),
+    deadlineAt: safeText(item?.deadlineAt, "-"),
+    tone: tones[index % tones.length]
+  };
+}
+
 function selectActivity(id) {
   form.activityId = String(id || "");
+}
+
+function selectCooperation(id) {
+  form.cooperationId = String(id || "");
+}
+
+async function loadCooperations() {
+  if (!store.isAuthed.value) {
+    cooperationChoices.value = [];
+    return;
+  }
+  cooperationLoading.value = true;
+  try {
+    const result = await api.listMyCooperations();
+    cooperationChoices.value = (Array.isArray(result) ? result : []).map(normalizeCooperation);
+  } catch (error) {
+    cooperationChoices.value = [];
+  } finally {
+    cooperationLoading.value = false;
+  }
 }
 
 async function handleFileSelect(event) {
@@ -542,6 +665,7 @@ function applyRemoteContent(result) {
   form.style = safeText(result?.tags?.[1], store.state.tagOptions.styleTags[0], "");
   form.budget = safeText(result?.tags?.[2]);
   form.activityId = safeText(result?.activity?.id, result?.activityId);
+  form.cooperationId = safeText(result?.cooperation?.id, result?.cooperationId);
   setRemoteImages(result?.imageUrls, safeText(result?.id, "remote-image"));
 }
 
@@ -553,7 +677,8 @@ function buildPayload() {
     tags: [form.scene, form.style, form.budget || ""],
     productPrice: buildProductPrice(form.price.trim()),
     productLink: form.link.trim(),
-    activityId: form.activityId || ""
+    activityId: form.activityId || "",
+    cooperationId: form.cooperationId || ""
   };
 }
 
@@ -599,6 +724,9 @@ async function saveDraftAction() {
     }
     if (form.activityId) {
       query.activityId = form.activityId;
+    }
+    if (form.cooperationId) {
+      query.cooperationId = form.cooperationId;
     }
 
     router.replace({
@@ -651,6 +779,7 @@ function resetForm() {
   form.budget = "";
   form.images = [];
   form.activityId = "";
+  form.cooperationId = "";
   form.draftId = "";
   form.postId = "";
 }

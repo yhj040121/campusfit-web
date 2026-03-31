@@ -346,8 +346,6 @@ button:disabled,
   display: grid;
   gap: 18px;
   align-content: start;
-  position: sticky;
-  top: 106px;
   align-self: start;
 }
 

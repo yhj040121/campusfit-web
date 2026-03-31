@@ -53,8 +53,20 @@ const state = reactive({
     timer: null,
     errorText: ""
   },
+  actionDialog: {
+    open: false,
+    mode: "alert",
+    tone: "default",
+    eyebrow: "Notice",
+    title: "",
+    message: "",
+    confirmText: "知道了",
+    cancelText: "取消"
+  },
   refreshTick: 0
 });
+
+let actionDialogResolver = null;
 
 function normalizeActivity(item, index = 0) {
   return {
@@ -110,6 +122,8 @@ function normalizePost(item, index = 0) {
     canViewDetail: item?.canViewDetail !== false,
     canShelfDown: !!item?.canShelfDown,
     canRestore: !!item?.canRestore,
+    canDelete: item?.canDelete !== false,
+    deleteBlockedReason: firstText(item?.deleteBlockedReason),
     price: safeText(item?.price),
     product: safeText(item?.product),
     productLink: firstText(item?.productLink),
@@ -170,7 +184,34 @@ function normalizeIncentive(item) {
     settledCount: clampNumber(item?.settledCount),
     pendingCount: clampNumber(item?.pendingCount),
     canWithdraw: !!item?.canWithdraw,
-    withdrawHint: safeText(item?.withdrawHint)
+    withdrawMinAmount: formatMoney(item?.withdrawMinAmount || 10),
+    withdrawFeeRate: safeText(item?.withdrawFeeRate, "0.02"),
+    withdrawHint: safeText(item?.withdrawHint),
+    settlementRecords: Array.isArray(item?.settlementRecords)
+      ? item.settlementRecords.map((record) => ({
+        recordId: String(record?.recordId || ""),
+        postId: String(record?.postId || ""),
+        postTitle: safeText(record?.postTitle, "未命名内容"),
+        type: safeText(record?.type, "创作激励"),
+        amount: formatMoney(record?.amount || 0),
+        status: safeText(record?.status, "待结算"),
+        statusCode: clampNumber(record?.statusCode),
+        createdAt: safeText(record?.createdAt, "-")
+      }))
+      : [],
+    withdrawRequests: Array.isArray(item?.withdrawRequests)
+      ? item.withdrawRequests.map((request) => ({
+        requestId: String(request?.requestId || ""),
+        amount: formatMoney(request?.amount || 0),
+        feeAmount: formatMoney(request?.feeAmount || 0),
+        netAmount: formatMoney(request?.netAmount || 0),
+        status: safeText(request?.status, "审核中"),
+        statusCode: clampNumber(request?.statusCode),
+        createdAt: safeText(request?.createdAt, "-"),
+        processedAt: safeText(request?.processedAt, "-"),
+        remark: safeText(request?.remark, "平台处理中")
+      }))
+      : []
   };
 }
 
@@ -425,7 +466,74 @@ function closeLoginDialog() {
   state.loginDialogOpen = false;
 }
 
+function finishActionDialog(result) {
+  state.actionDialog.open = false;
+  const resolver = actionDialogResolver;
+  actionDialogResolver = null;
+  if (resolver) {
+    resolver(result);
+  }
+}
+
+function closeActionDialog() {
+  finishActionDialog(false);
+}
+
+function submitActionDialog() {
+  finishActionDialog(true);
+}
+
+function normalizeActionDialogOptions(payload, fallbackMode) {
+  const options = typeof payload === "string" ? { message: payload } : (payload || {});
+  const mode = options.mode === "confirm" || fallbackMode === "confirm" ? "confirm" : "alert";
+  const tone = options.tone === "danger" ? "danger" : "default";
+  return {
+    mode,
+    tone,
+    eyebrow: firstText(options.eyebrow, mode === "confirm" ? "Confirm" : "Notice"),
+    title: firstText(options.title, mode === "confirm" ? "请确认" : "提示"),
+    message: firstText(options.message),
+    confirmText: firstText(options.confirmText, mode === "confirm" ? "确认" : "知道了"),
+    cancelText: mode === "confirm" ? firstText(options.cancelText, "取消") : ""
+  };
+}
+
+function openActionDialog(payload, fallbackMode = "alert") {
+  const options = normalizeActionDialogOptions(payload, fallbackMode);
+
+  if (typeof window === "undefined") {
+    return Promise.resolve(options.mode === "confirm");
+  }
+
+  if (actionDialogResolver) {
+    actionDialogResolver(false);
+    actionDialogResolver = null;
+  }
+
+  state.actionDialog.open = true;
+  state.actionDialog.mode = options.mode;
+  state.actionDialog.tone = options.tone;
+  state.actionDialog.eyebrow = options.eyebrow;
+  state.actionDialog.title = options.title;
+  state.actionDialog.message = options.message;
+  state.actionDialog.confirmText = options.confirmText;
+  state.actionDialog.cancelText = options.cancelText;
+
+  return new Promise((resolve) => {
+    actionDialogResolver = resolve;
+  });
+}
+
+async function confirmDialog(payload) {
+  return openActionDialog(payload, "confirm");
+}
+
+async function alertDialog(payload) {
+  await openActionDialog(payload, "alert");
+}
+
 function logout() {
+  closeActionDialog();
   clearSession();
   state.user = null;
   resetPrivateState();
@@ -448,6 +556,7 @@ const selectableActivities = computed(() => {
 });
 
 window.addEventListener("campusfit-auth-expired", () => {
+  closeActionDialog();
   state.user = null;
   resetPrivateState();
   resetLoginForm();
@@ -467,6 +576,10 @@ export function useAppStore() {
     loadPrivateData,
     openLoginDialog,
     closeLoginDialog,
+    confirmDialog,
+    alertDialog,
+    closeActionDialog,
+    submitActionDialog,
     sendLoginCode,
     submitLoginForm,
     loginWithCode,

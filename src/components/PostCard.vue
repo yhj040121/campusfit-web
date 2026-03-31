@@ -97,7 +97,7 @@ const statusBadgeClass = computed(() => {
 });
 
 const canEdit = computed(() => {
-  return props.showOwnerActions && props.post.publishStatus === "REJECTED";
+  return props.showOwnerActions;
 });
 
 const canDelete = computed(() => {

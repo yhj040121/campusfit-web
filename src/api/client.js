@@ -138,6 +138,26 @@ export function getMyIncentiveCenter() {
   return http.get("/profile/incentives");
 }
 
+export function requestIncentiveWithdraw(amount) {
+  return http.post("/profile/incentives/withdraw", amount ? { amount } : {});
+}
+
+export function listMyCooperations() {
+  return http.get("/cooperations/mine");
+}
+
+export function getCooperationDetail(cooperationId) {
+  return http.get(`/cooperations/${cooperationId}`);
+}
+
+export function acceptCooperation(cooperationId) {
+  return http.post(`/cooperations/${cooperationId}/accept`);
+}
+
+export function abandonCooperation(cooperationId) {
+  return http.post(`/cooperations/${cooperationId}/abandon`);
+}
+
 export function listMyPosts() {
   return http.get("/posts/mine");
 }

@@ -144,8 +144,16 @@
 
         <aside class="profile-side">
           <section class="panel">
-            <div class="panel__eyebrow">Incentive</div>
-            <h2 class="panel__title">激励中心</h2>
+            <div class="panel__header">
+              <div>
+                <div class="panel__eyebrow">Incentive</div>
+                <h2 class="panel__title">激励中心</h2>
+              </div>
+              <div class="panel__actions">
+                <button class="small-link small-link--soft" type="button" @click="router.push({ name: 'incentives' })">激励详情</button>
+                <button class="small-link small-link--soft" type="button" @click="router.push({ name: 'cooperations' })">我的合作</button>
+              </div>
+            </div>
             <div class="status-metrics">
               <div class="status-metric">
                 <strong>{{ store.state.incentiveCenter?.availableAmount || "¥0.00" }}</strong>
@@ -157,6 +165,58 @@
               </div>
             </div>
             <p v-if="store.state.incentiveCenter?.withdrawHint" class="helper-inline">{{ store.state.incentiveCenter.withdrawHint }}</p>
+
+            <div class="incentive-section">
+              <div class="incentive-section__title">最近激励</div>
+              <div v-if="incentiveSettlementRecords.length" class="incentive-list">
+                <article
+                  v-for="record in incentiveSettlementRecords"
+                  :key="record.recordId"
+                  class="incentive-card"
+                >
+                  <div class="incentive-card__main">
+                    <strong>{{ record.type }}</strong>
+                    <p>{{ record.postTitle }}</p>
+                    <span>{{ record.createdAt }}</span>
+                  </div>
+                  <div class="incentive-card__side">
+                    <strong>{{ record.amount }}</strong>
+                    <span :class="['incentive-card__status', record.statusCode === 1 ? 'incentive-card__status--success' : 'incentive-card__status--warning']">{{ record.status }}</span>
+                    <button
+                      v-if="record.postId && record.postId !== '0'"
+                      class="small-link small-link--soft"
+                      type="button"
+                      @click="openIncentivePost(record.postId)"
+                    >
+                      查看内容
+                    </button>
+                  </div>
+                </article>
+              </div>
+              <div v-else class="comment-empty">暂无激励明细</div>
+            </div>
+
+            <div class="incentive-section">
+              <div class="incentive-section__title">提现进度</div>
+              <div v-if="withdrawRequests.length" class="incentive-list">
+                <article
+                  v-for="request in withdrawRequests"
+                  :key="request.requestId"
+                  class="incentive-card incentive-card--withdraw"
+                >
+                  <div class="incentive-card__main">
+                    <strong>{{ request.amount }}</strong>
+                    <p>{{ request.remark }}</p>
+                    <span>{{ request.createdAt }}</span>
+                  </div>
+                  <div class="incentive-card__side">
+                    <span :class="['incentive-card__status', request.statusCode === 1 ? 'incentive-card__status--success' : (request.statusCode === 2 ? 'incentive-card__status--danger' : 'incentive-card__status--warning')]">{{ request.status }}</span>
+                    <span>{{ request.processedAt !== "-" ? request.processedAt : "等待处理" }}</span>
+                  </div>
+                </article>
+              </div>
+              <div v-else class="comment-empty">暂无提现记录</div>
+            </div>
           </section>
 
           <section class="panel">
@@ -245,6 +305,14 @@ const currentPosts = computed(() => {
   return store.state.myPosts;
 });
 
+const incentiveSettlementRecords = computed(() => {
+  return (store.state.incentiveCenter?.settlementRecords || []).slice(0, 4);
+});
+
+const withdrawRequests = computed(() => {
+  return (store.state.incentiveCenter?.withdrawRequests || []).slice(0, 3);
+});
+
 const emptyState = computed(() => {
   if (activeTab.value === "likes") {
     return {
@@ -289,6 +357,13 @@ function openActivity(id) {
   router.push({ name: "activity-detail", params: { id } });
 }
 
+function openIncentivePost(postId) {
+  if (!postId || postId === "0") {
+    return;
+  }
+  router.push({ name: "post-detail", params: { id: postId } });
+}
+
 function openDraft(id) {
   router.push({ name: "publish", query: { draftId: id } });
 }
@@ -311,11 +386,29 @@ function editPost(post) {
 }
 
 async function deletePostAction(post) {
-  if (typeof window !== "undefined") {
-    const confirmed = window.confirm(`确定删除《${post.title}》吗？删除后无法恢复。`);
-    if (!confirmed) {
-      return;
-    }
+  const blockedReason = String(post?.deleteBlockedReason || "").trim();
+  if (post?.canDelete === false && blockedReason) {
+    flashNotice.value = blockedReason;
+    await store.alertDialog({
+      eyebrow: "Delete",
+      title: "暂不能删除",
+      message: blockedReason,
+      confirmText: "我知道了",
+      tone: "danger"
+    });
+    return;
+  }
+
+  const confirmed = await store.confirmDialog({
+    eyebrow: "Delete",
+    title: "确认删除作品",
+    message: `确定删除《${post.title}》吗？删除后无法恢复；若作品参与合作，仅在合作单取消后，或奖励发放满30天后才能删除。`,
+    confirmText: "确认删除",
+    cancelText: "再想想",
+    tone: "danger"
+  });
+  if (!confirmed) {
+    return;
   }
 
   try {
@@ -327,6 +420,13 @@ async function deletePostAction(post) {
     await store.refreshAll();
   } catch (error) {
     flashNotice.value = error?.message || "删除失败，请稍后重试。";
+    await store.alertDialog({
+      eyebrow: "Delete",
+      title: "删除失败",
+      message: flashNotice.value,
+      confirmText: "知道了",
+      tone: "danger"
+    });
   }
 }
 
@@ -520,5 +620,111 @@ function syncTabFromRoute(value) {
 
 .profile-hero__actions {
   margin-top: 4px;
+}
+
+.panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.incentive-section {
+  display: grid;
+  gap: 10px;
+}
+
+.incentive-section__title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.incentive-list {
+  display: grid;
+  gap: 10px;
+}
+
+.incentive-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(20, 103, 245, 0.08);
+}
+
+.incentive-card__main,
+.incentive-card__side {
+  display: grid;
+  gap: 6px;
+}
+
+.incentive-card__main strong,
+.incentive-card__side strong {
+  font-size: 14px;
+}
+
+.incentive-card__main p {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.incentive-card__main span,
+.incentive-card__side span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.incentive-card__side {
+  justify-items: end;
+  text-align: right;
+}
+
+.incentive-card__status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.incentive-card__status--success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.incentive-card__status--warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+
+.incentive-card__status--danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b42318;
+}
+
+@media (max-width: 640px) {
+  .panel__header,
+  .incentive-card {
+    grid-template-columns: 1fr;
+  }
+
+  .incentive-card__side {
+    justify-items: start;
+    text-align: left;
+  }
 }
 </style>
