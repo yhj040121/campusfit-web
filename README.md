@@ -1,6 +1,6 @@
-# CampusFit Web
+# 青搭 Web
 
-CampusFit Web 是基于 Vue 3、Vue Router、Vite 和 Axios 的前端项目。
+青搭 Web 是基于 Vue 3、Vue Router、Vite 和 Axios 的前端项目。
 
 ## 本地开发
 

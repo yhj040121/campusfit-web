@@ -100,7 +100,7 @@
         <section class="section-panel profile-edit-panel">
           <div class="section-head">
             <div class="section-head__main">
-              <div class="section-title__eyebrow">Campus</div>
+              <div class="section-title__eyebrow">青搭</div>
               <h2 class="section-title">校园信息</h2>
             </div>
           </div>
