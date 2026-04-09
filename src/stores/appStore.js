@@ -120,8 +120,6 @@ function normalizePost(item, index = 0) {
     publishStatusText: safeText(item?.publishStatusText, "已发布"),
     publishStatusDesc: safeText(item?.publishStatusDesc),
     canViewDetail: item?.canViewDetail !== false,
-    canShelfDown: !!item?.canShelfDown,
-    canRestore: !!item?.canRestore,
     canDelete: item?.canDelete !== false,
     deleteBlockedReason: firstText(item?.deleteBlockedReason),
     price: safeText(item?.price),
@@ -591,4 +589,5 @@ export function useAppStore() {
     normalizeDraft
   };
 }
+
 

@@ -90,10 +90,6 @@ export function toggleFavorite(postId) {
   return http.post(`/posts/${postId}/favorite`);
 }
 
-export function listLikeUsers(postId) {
-  return http.get(`/posts/${postId}/likes`);
-}
-
 export function toggleFollow(targetUserId) {
   return http.post(`/profile/follows/${targetUserId}`);
 }
@@ -144,10 +140,6 @@ export function requestIncentiveWithdraw(amount) {
 
 export function listMyCooperations() {
   return http.get("/cooperations/mine");
-}
-
-export function getCooperationDetail(cooperationId) {
-  return http.get(`/cooperations/${cooperationId}`);
 }
 
 export function acceptCooperation(cooperationId) {
